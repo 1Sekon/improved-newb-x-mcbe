@@ -48,6 +48,7 @@ void main() {
 #endif
 
   vec4 position = jitterVertexPosition(worldPosition);
+  vec3 cPos = a_position;
 
 #if defined(DEPTH_ONLY)
   v_texcoord0 = vec2(0.0, 0.0);
@@ -72,8 +73,9 @@ void main() {
   } else if (end) {
     newFog = getEndHorizonCol();
   } else {
-    vec3 fs = getSkyFactors(FogColor.rgb);
-    newFog = getHorizonCol(rainFactor, FogColor.rgb, fs);
+    //vec3 fs = getSkyFactors(FogColor.rgb);
+    //newFog = getHorizonCol(rainFactor, FogColor.rgb, fs);
+    newFog = getHorizonCol(rainFactor, FogColor.rgb);
     newFog = getHorizonEdgeCol(newFog.rgb, rainFactor, FogColor.rgb);
   }
 
@@ -82,14 +84,14 @@ void main() {
 
   vec4 fogColor;
   fogColor.rgb = newFog;
-  fogColor.a = nlRenderFogFade(camDist, FogColor.rgb, FogControl.xy);
+  fogColor.a = nlRenderFogFade(camDist, FogColor.rgb, FogControl.xy, vec2(0.0, 0.0), end);
 
   if (nether) {
     // blend fog with void color
     fogColor.rgb = colorCorrectionInv(FogColor.rgb);
   }
 
-  vec3 light = nlActorLighting(a_position, a_normal, World, TileLightColor, OverlayColor, newFog, nether, underWater, end, ViewPositionAndTime.w);
+  vec3 light = nlActorLighting(a_position, a_normal, World, TileLightColor, OverlayColor, newFog, nether, underWater, end, ViewPositionAndTime.w, FogColor.rgb, rainFactor);
 
   v_fog = fogColor;
   v_edgemap = edgeMap;
