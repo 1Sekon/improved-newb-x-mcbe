@@ -2,7 +2,7 @@ $input a_texcoord0, a_position
 #ifdef INSTANCING
   $input i_data0, i_data1, i_data2, i_data3
 #endif
-$output v_posTime, v_texcoord0
+$output v_posTime, v_texcoord0, v_sPos
 
 #include <bgfx_shader.sh>
 #include <newb/main.sh>
@@ -25,12 +25,13 @@ void main() {
   // rotate skybox
   float sinA = sin(t);
   float cosA = cos(t);
-  pos.xz = mul(mtxFromRows(vec2(cosA,-sinA),vec2(sinA,cosA)), pos.xz);
+  //pos.xz = mul(mtxFromRows(vec2(cosA,-sinA),vec2(sinA,cosA)), pos.xz);
 
   vec3 wPos = pos;
   wPos.xz = -wPos.xz;
 
   v_texcoord0 = 2.0*a_texcoord0;
+  v_sPos = a_position.xyz;
   v_posTime = vec4(wPos, ViewPositionAndTime.w);
   gl_Position = mul(u_viewProj, vec4(pos, 1.0));
 }
