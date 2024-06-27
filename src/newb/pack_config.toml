@@ -1,65 +1,72 @@
-name = "Newb X Legacy"
-version = [0, 15, 0]
-url = "https://devendrn.github.io/newb-shader/"
-authors = ["devendrn"]
+name = "Newb X Future"
+version = [0, 16, 1]
+url = "https://github.com/1sekon/newb-x-future/"
+authors = ["1sekon"]
 min_supported_mc_version = [1, 20, 80]
-materials = ["Sky", "LegacyCubemap", "Clouds", "EndSky", "SunMoon", "RenderChunk", "Actor"]
+materials = ["Stars", "Sky", "LegacyCubemap", "Clouds", "EndSky", "SunMoon", "RenderChunk", "Actor"]
 
 [description]
 # %w = patch warning, %v = version
 long = '''
 §c%w
-§7- An enchanced vanilla shader for Minecraft!
+§7- A newb shader variant with Complementary themed shader!
 %v
-§3https://devendrn.github.io/newb-shader/
+§3https://github.com/1sekon/newb-x-future/
 '''
-short = "Legacy port of Newb Shader for RenderDragon"
+short = "A variant of Newb Shader for RenderDragon"
 
 [uuid] # Use https://www.uuidgenerator.net/version4
-header = "95f774cf-4afa-73e7-a21a-72146307b1d2"
-module = "900f3d8b-37b4-465f-8f56-941687e36c35"
+header = "2b876f38-1181-4865-a860-45d47c2a2030"
+module = "4b5c2fae-0bf0-3415-a7a4-857809a4dc68"
 
 # subpacks are arranged in left to right order
 # right-most subpack is enabled by default
 
 [[subpack]]
-define = "ROUNDED_CLOUDS"
+define = "L_S_SC"
+materials = ["RenderChunk", "Clouds", "Sky", "EndSky", "LegacyCubemap", "Actor"]
+description = '''
+§lLow Saturation with Simple Clouds§r\nPerformance: §a•••§r\n - Enable simple clouds with lowering the saturation
+'''
+
+[[subpack]]
+define = "LOW_SATURATION"
+materials = ["RenderChunk", "Clouds", "Sky", "EndSky", "LegacyCubemap", "Actor"]
+description = '''
+§lLow Saturation§r\nPerformance: §a•••§r\n - Lowering the saturation if the default one looks oversaturated
+'''
+
+[[subpack]]
+define = "GLOSSY_EFFECTS"
+materials = ["RenderChunk"]
+description = '''
+§lGlossy Effects§r\nPerformance: §g••§r\n - Always reflection effect
+'''
+
+[[subpack]]
+define = "SIMPLE_CLOUDD"
 materials = ["Clouds"]
 description = '''
-Rounded Clouds
+§lSimple Clouds§r\nPerformance: §a•••§r\n - Use simple clouds if rounded clouds one lag
 '''
 
 [[subpack]]
-define = "CHUNK_ANIM"
-materials = ["RenderChunk"]
+define = "MULTILAYER"
+materials = ["Clouds"]
 description = '''
-Chunk loading animation
+§lMultilayer Clouds§r\nPerformance: §c•§r\n - Enable multilayer rounded clouds, might lag on some device
 '''
 
 [[subpack]]
-define = "NO_WAVE_NO_FOG"
+define = "NO_WPWAVE"
 materials = ["RenderChunk"]
 description = '''
-No fog and wave effects
-'''
-
-[[subpack]]
-define = "NO_FOG"
-materials = ["RenderChunk"]
-description = '''
-No fog effect
-'''
-
-[[subpack]]
-define = "NO_WAVE"
-materials = ["RenderChunk"]
-description = '''
-No wave effects
+§lNo Wave§r\nPerformance: §a•••§r\n - Disable plants and water wave but keep the swinging lantern
 '''
 
 [[subpack]]
 define = "DEFAULT"
 materials = []
 description = '''
-Default
+§lDefault§r\nPerformance: §a•••§r\n - Nothing to describe about this
 '''
