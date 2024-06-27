@@ -10,11 +10,6 @@ Why you are here?
 
 
 
-// distance between two vec2
-float distance(vec2 p0, vec2 p1)
-{
-    return sqrt((p1.x - p0.x) * (p1.x - p0.x) + (p1.y - p0.y) * (p1.y - p0.y));
-}
 
 
 // for tinting rounded cloud
@@ -69,7 +64,7 @@ void drawMeteor(inout vec3 col, in vec2 uv, vec2 startP, vec2 endP, float linWid
    float disToTail = length(projDir);
    dis = linWidth / dis;
 
-   col += dis*vec3(0.8)*(disToTail*disToTail*disToTail)*mask*smoothstep(0.0, 1.0, (1.0-distance(startP, endP)));
+   col += dis*vec3(0.8, 0.8, 0.8)*(disToTail*disToTail*disToTail)*mask;
 
 }
 

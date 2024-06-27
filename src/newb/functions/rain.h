@@ -7,7 +7,7 @@
 
 float Reflection1(vec3 pos){
   float m = clamp(length(pos.xz), 0.0, 1.0);
-  float r = cos(atan(pos.x*0.9, pos.z*0.6)*10.)*1.2;
+  float r = cos(atan2(pos.x*0.9, pos.z*0.6)*10.)*1.2;
 
   return mix(0.0, r, smoothstep(0.45, 1.0, m));
 }
