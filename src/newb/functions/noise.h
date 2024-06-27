@@ -5,7 +5,7 @@
 
 // hash function for noise (for highp only)
 highp float rand(highp vec2 n) {
-  return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+  return fract(cos(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
 }
 
 // rand with transition
@@ -30,6 +30,26 @@ float fastRand(vec2 n){
 float disp(vec3 pos, highp float t) {
   float val = 0.5 + 0.5*sin(t*1.7 + (pos.x+pos.y)*NL_CONST_PI_HALF);
   return mix(fastRand(pos.xz), fastRand(pos.xz+vec2_splat(1.0)), val);
+}
+
+// hash function for shooting stars
+highp float hashS (highp vec2 x)
+{
+return fract(sin(dot(
+	x,vec2(11,57)))*4e3);
+}
+
+// for end sky stars and sunrays
+float hash13(vec3 p3)
+{
+	p3  = fract(p3 * vec3(.1031,.11369,.13787));
+    p3 += dot(p3, p3.yzx + 19.19);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+float hash1(vec2 p){
+  vec2 v = vec2(NLC_CONST_PI*1453.0,exp(1.)*3054.0);
+  return fract(sin(dot(p,v)*0.1)*4323.0);
 }
 
 #endif

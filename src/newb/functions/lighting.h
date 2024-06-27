@@ -3,21 +3,14 @@
 
 #include "constants.h"
 #include "noise.h"
+#include "water.h"
 
 #define SHADOW_EDGE 0.93
 
 // sunlight tinting
 vec3 sunLightTint(float dayFactor, float rain, vec3 FOG_COLOR) {
 
-  float tintFactor = FOG_COLOR.g + 0.1*FOG_COLOR.r;
-  float noon = clamp((tintFactor-0.37)/0.45,0.0,1.0);
-  float morning = clamp((tintFactor-0.05)*3.125,0.0,1.0);
-
-  vec3 clearTint = mix(
-    mix(NL_NIGHT_SUN_COL, NL_MORNING_SUN_COL, morning),
-    mix(NL_MORNING_SUN_COL, NL_NOON_SUN_COL, noon),
-    dayFactor
-  );
+  vec3 clearTint = mix(mix(NL_NOON_SUN_COL, NL_MORNING_SUN_COL, duskD(FOG_COLOR)), NL_NIGHT_SUN_COL, nightD(FOG_COLOR));
 
   float r = 1.0-rain;
   r *= r;
@@ -56,14 +49,14 @@ vec3 nlLighting(
 
     light = end ? NL_END_AMBIENT : NL_NETHER_AMBIENT;
 
-    light += horizonCol + torchLight*0.5;
+    light += torchLight*1.1;
   } else {
     // overworld lighting
 
     float dayFactor = min(dot(FOG_COLOR.rgb, vec3(0.5,0.4,0.4))*(1.0 + 1.9*rainFactor), 1.0);
     float nightFactor = 1.0-dayFactor*dayFactor;
     float rainDim = min(FOG_COLOR.g, 0.25)*rainFactor;
-    float lightIntensity = NL_SUN_INTENSITY*(1.0 - rainDim)*(1.0 + NL_NIGHT_BRIGHTNESS*nightFactor);
+    float lightIntensity = mix(mix(NL_SUN_INTENSITY*(1.0 - rainDim), 0.12*(1.0 - rainDim), duskD(FOG_COLOR)), NL_SUN_INTENSITY*(1.0 + NL_NIGHT_BRIGHTNESS), nightD(FOG_COLOR));
 
     // min ambient in caves
     light = vec3_splat((1.35+NL_CAVE_BRIGHTNESS)*(1.0-uv1.x)*(1.0-uv1.y));
@@ -73,12 +66,13 @@ vec3 nlLighting(
 
     // shadow cast by top light
     float shadow = step(SHADOW_EDGE, uv1.y);
-    shadow = max(shadow, (1.0 - NL_SHADOW_INTENSITY + (0.6*NL_SHADOW_INTENSITY*nightFactor))*lit.y);
+    float shadowIntensity = mix(NL_SHADOW_INTENSITY, 0.03, duskD(FOG_COLOR));
+    shadow = max(shadow, (1.0 - shadowIntensity + (0.6*shadowIntensity*nightFactor))*lit.y);
     shadow *= shade > 0.8 ? 1.0 : 0.8;
 
     // shadow cast by simple cloud
     #ifdef NL_CLOUD_SHADOW
-      shadow *= 1.0 - cloudNoise2D(wPos.xz*NL_CLOUD1_SCALE, t, rainFactor);
+      shadow *= 1.0 - cloudNoise2D(wPos.xz*NL_CLOUD1_SCALE_XZ, t, rainFactor);
     #endif
 
     // direct light from top
@@ -116,7 +110,7 @@ void nlUnderwaterLighting(inout vec3 light, inout vec3 pos, vec2 lit, vec2 uv1, 
 #endif
 }
 
-vec3 nlActorLighting(vec3 pos, vec4 normal, mat4 world, vec4 tileLightCol, vec4 overlayCol, vec3 horizonCol, bool nether, bool underWater, bool end, float t) {
+vec3 nlActorLighting(vec3 pos, vec4 normal, mat4 world, vec4 tileLightCol, vec4 overlayCol, vec3 horizonCol, bool nether, bool underWater, bool end, float t, vec3 FOG_COLOR, float rainFactor) {
   float intensity;
 #ifdef FANCY
   vec3 N = normalize(mul(world, normal)).xyz;

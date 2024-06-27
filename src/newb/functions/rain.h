@@ -5,6 +5,13 @@
 #include "sky.h"
 #include "water.h"
 
+float Reflection1(vec3 pos){
+  float m = clamp(length(pos.xz), 0.0, 1.0);
+  float r = cos(atan(pos.x*0.9, pos.z*0.6)*10.)*1.2;
+
+  return mix(0.0, r, smoothstep(0.45, 1.0, m));
+}
+
 float nlWindblow(vec2 p, float t){
   float val = sin(4.0*p.x + 2.0*p.y + 2.0*t + 3.0*p.y*p.x)*sin(p.y*2.0 + 0.2*t);
   val += sin(p.y - p.x + 0.2*t);
@@ -17,6 +24,9 @@ vec4 nlRefl(
   vec3 zenithCol, vec3 FOG_COLOR, float rainFactor, float renderDist, highp float t, vec3 pos, bool underWater, bool end, bool nether
 ) {
   vec4 wetRefl = vec4(0.0,0.0,0.0,0.0);
+  float night = 1.0*max(1.0 - 3.0*max(FOG_COLOR.b, FOG_COLOR.g), 0.0);
+
+if(!end) {
 
   #ifndef NL_GROUND_REFL
   if (rainFactor > 0.0) {
@@ -50,21 +60,22 @@ vec4 nlRefl(
 
       if (wPos.y < 0.0) {
         // wetRefl.rgb = getRainSkyRefl(horizonCol, zenithCol, cosR);
-        wetRefl.rgb = getSkyRefl(horizonEdgeCol, horizonCol, zenithCol, viewDir, FOG_COLOR, t, -wPos.y, rainFactor, end, underWater, nether);
+        wetRefl.rgb = getSkyRefl(horizonEdgeCol, horizonCol, zenithCol, viewDir, FOG_COLOR, t, -wPos.y, rainFactor, end, underWater, nether, wPos, lit.y);
         wetRefl.a = calculateFresnel(cosR, 0.03)*reflective;
 
         #if defined(NL_GROUND_AURORA_REFL) && defined(NL_AURORA) && defined (NL_GROUND_REFL)
-        vec2 parallax = viewDir.xz/viewDir.y;
-        vec2 projectedPos = wPos.xz - parallax*100.0;
-        float fade = clamp(2.0 - 0.004*length(projectedPos), 0.0, 1.0);
-        //projectedPos += fade*parallax;
-
-        vec4 aurora = renderAurora(projectedPos.xyy, t, rainFactor, horizonEdgeCol);
-        wetRefl.rgb += 2.0*aurora.rgb*aurora.a*fade;
+      if(camDist < 57.0) {
+        wetRefl.rgb += nlcAuroraReflect(wPos, t, rainFactor, FOG_COLOR).rgb*lit.y*(1.0-0.75*color.a)*clamp(2.0-2.0*camDist/57.0, 0.0, 1.0);
+      }
         #endif
 
         // torch light
         wetRefl.rgb += torchColor*lit.x*NL_TORCH_INTENSITY;
+        
+        // fake reflections
+      #ifndef NL_GROUND_REFL
+        wetRefl.rgb += mix(0.0, Reflection1(wPos)*0.8*(1.0-night), puddles);
+      #endif
 
         // fade out before clip
         wetRefl.a *= clamp(2.0-2.0*camDist/endDist, 0.0, 1.0);
@@ -77,6 +88,8 @@ vec4 nlRefl(
   #ifndef NL_GROUND_REFL
   }
   #endif
+
+}
 
   return wetRefl;
 }

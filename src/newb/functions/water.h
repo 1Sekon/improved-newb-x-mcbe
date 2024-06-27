@@ -16,12 +16,13 @@ float calculateFresnel(float cosR, float r0) {
 vec4 nlWater(
   inout vec3 wPos, inout vec4 color, vec4 COLOR, vec3 viewDir, vec3 light, vec3 cPos, vec3 tiledCpos,
   float fractCposY, vec3 FOG_COLOR, vec3 horizonCol, vec3 horizonEdgeCol, vec3 zenithCol,
-  vec2 lit, highp float t, float camDist, float rainFactor,
+  vec2 lit, vec2 uv1, highp float t, float camDist, float rainFactor,
   vec3 torchColor, bool end, bool nether, bool underWater
 ) {
 
   float cosR;
-  float bump = NL_WATER_BUMP;
+  float bump = disp(tiledCpos, t) + 0.12*sin(t*2.0 + dot(cPos, vec3_splat(NL_CONST_PI_HALF)));
+  bump *= NL_WATER_BUMP;
   vec3 waterRefl;
 
   if (fractCposY > 0.0) { // reflection for top plane
@@ -34,25 +35,26 @@ vec4 nlWater(
     viewDir.y = cosR;
 
     // sky reflection
-    waterRefl = getSkyRefl(horizonEdgeCol, horizonCol, zenithCol, viewDir, FOG_COLOR, t, -wPos.y, rainFactor, end, underWater, nether);
+    waterRefl = getSkyRefl(horizonEdgeCol, horizonCol, zenithCol, viewDir, FOG_COLOR, t, -wPos.y, rainFactor, end, underWater, nether, wPos, lit.y);
 
     // cloud and aurora reflection
-    #if defined(NL_WATER_CLOUD_REFLECTION)
+    #if defined(NL_WATER_REFLECTION)
       if (wPos.y < 0.0) {
         vec2 parallax = viewDir.xz/viewDir.y;
         vec2 projectedPos = wPos.xz - parallax*100.0*(1.0-bump);
         float fade = clamp(2.0 - 0.004*length(projectedPos), 0.0, 1.0);
         //projectedPos += fade*parallax;
 
-        #ifdef NL_AURORA
-        vec4 aurora = renderAurora(projectedPos.xyy, t, rainFactor, FOG_COLOR);
-        waterRefl += 2.0*aurora.rgb*aurora.a*fade;
-        #endif
+      #ifdef NL_AURORA
+      if(camDist < 57.0) {
+         waterRefl += nlcAuroraReflect(wPos, t, rainFactor, FOG_COLOR).rgb*lit.y*(1.0-0.75*color.a)*clamp(2.0-2.0*camDist/57.0, 0.0, 1.0);
+      }
+      #endif
 
-        #if NL_CLOUD_TYPE == 1
-        vec4 clouds = renderCloudsSimple(projectedPos.xyy, t, rainFactor, zenithCol, horizonCol, horizonEdgeCol);
-        waterRefl = mix(waterRefl, 1.5*clouds.rgb, clouds.a*fade);
-        #endif
+      #if NL_CLOUD_TYPE == 1
+      vec4 clouds = renderCloudsSimple(projectedPos.xyy, t, rainFactor, zenithCol, horizonCol, horizonEdgeCol, FOG_COLOR);
+//        waterRefl = mix(waterRefl, 1.5*clouds.rgb, clouds.a*fade);
+      #endif
       }
     #endif
 
@@ -70,7 +72,7 @@ vec4 nlWater(
     cosR = max(sqrt(dot(viewDir.xz, viewDir.xz)), step(wPos.y, 0.5));
     cosR += (1.0-cosR*cosR)*bump;
 
-    waterRefl = zenithCol;
+    waterRefl = zenithCol*lit.y*1.3;
   }
 
   // mask sky reflection under shade
@@ -81,7 +83,8 @@ vec4 nlWater(
   float fresnel = calculateFresnel(cosR, 0.03);
   float opacity = 1.0-cosR;
 
-  color.rgb *= 0.22*NL_WATER_TINT*(1.0-0.8*fresnel);
+// Tint
+  color.rgb *= 0.1*zenithCol*(1.0-0.5*fresnel);
 
 #ifdef NL_WATER_FOG_FADE
   color.a *= NL_WATER_TRANSPARENCY;
