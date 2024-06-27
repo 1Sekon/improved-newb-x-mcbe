@@ -22,7 +22,7 @@ void main() {
   //color += diffuse.rgb;
   
   float s = endStars(nPos, ViewPositionAndTime.w);
-	color += HorizonMask(vec3(0.0), vec3(s*0.7, s*hash13(abs(nPos)), s*0.9), nPos);
+	color += HorizonMask(vec3(0.0, 0.0, 0.0), vec3(s*0.7, s*hash13(abs(nPos)), s*0.9), nPos);
 
   color = colorCorrection(color);
 
