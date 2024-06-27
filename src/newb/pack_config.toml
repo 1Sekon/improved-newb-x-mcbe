@@ -1,9 +1,9 @@
 name = "Newb X Future"
-version = [0, 16, 1]
+version = [0, 16, 0]
 url = "https://github.com/1sekon/newb-x-future/"
 authors = ["1sekon"]
 min_supported_mc_version = [1, 20, 80]
-materials = ["Stars", "Sky", "LegacyCubemap", "Clouds", "EndSky", "SunMoon", "RenderChunk", "Actor"]
+materials = ["Sky", "LegacyCubemap", "Clouds", "EndSky", "SunMoon", "RenderChunk", "Actor"]
 
 [description]
 # %w = patch warning, %v = version
