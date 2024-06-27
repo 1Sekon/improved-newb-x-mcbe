@@ -4,8 +4,8 @@ $input a_color0, a_position
 #endif
 $output v_color0
 #include <newb/config.h>
-#if NL_CLOUD_TYPE == 2
-  $output v_color1, v_color2, v_fogColor
+#if defined(TRANSPARENT) && NL_CLOUD_TYPE == 2
+  $output v_color1, v_color2, v_fogColor, v_horizon
 #endif
 
 #include <bgfx_shader.sh>
@@ -17,17 +17,18 @@ uniform vec4 FogAndDistanceControl;
 uniform vec4 ViewPositionAndTime;
 
 void main() {
+#ifdef TRANSPARENT
+
 #ifdef INSTANCING
   mat4 model = mtxFromCols(i_data0, i_data1, i_data2, i_data3);
 #else
   mat4 model = u_model[0];
 #endif
-  float t = ViewPositionAndTime.w;
+  highp float t = ViewPositionAndTime.w;
   float rain = detectRain(FogAndDistanceControl.xyz);
 
-  vec3 fs = getSkyFactors(FogColor.rgb);
-  vec3 zenithCol = getZenithCol(rain, FogColor.rgb, fs);
-  vec3 horizonCol = getHorizonCol(rain, FogColor.rgb, fs);
+  vec3 zenithCol = getZenithCol(rain, FogColor.rgb);
+  vec3 horizonCol = getHorizonCol(rain, FogColor.rgb);
   vec3 fogCol = getHorizonEdgeCol(horizonCol, rain, FogColor.rgb);
 
   vec3 pos = a_position;
@@ -59,31 +60,36 @@ void main() {
 
     float fade = clamp(2.0-2.0*length(worldPos.xyz)*0.0022, 0.0, 1.0);
     #if NL_CLOUD_TYPE == 1
+    vec3 vDir = normalize(worldPos);
       // make cloud plane spherical
       float len = length(worldPos.xz)*0.01;
       worldPos.y -= len*len*clamp(0.2*worldPos.y, -1.0, 1.0);
+      
+      vec3 rsky = nlRenderSky(fogCol, horizonCol, zenithCol, -vDir, t, rain, detectUnderwater(FogColor.rgb, FogAndDistanceControl.xy), false, false, FogColor.rgb, 1.0);
 
-      color = renderCloudsSimple(worldPos.xyz, t, rain, zenithCol, horizonCol, fogCol);
+      color = renderCloudsSimple(worldPos.xyz, t, rain, rsky, rsky, rsky, FogColor.rgb);
 
       // cloud depth
       worldPos.y -= NL_CLOUD1_DEPTH*color.a*3.3;
 
       color.a *= NL_CLOUD1_OPACITY;
 
-      #ifdef NL_AURORA
-        color += renderAurora(worldPos, t, rain, fogCol)*(1.0-color.a);
-      #endif
-
       color.a *= fade;
       color.rgb = colorCorrection(color.rgb);
     #else
+
       v_fogColor = FogColor.rgb;
       v_color2 = vec4(fogCol,ViewPositionAndTime.w);
       v_color1 = vec4(zenithCol,rain);
+      v_horizon = vec4(horizonCol, (float(detectUnderwater(FogColor.rgb, FogAndDistanceControl.xy))));
       color = vec4(worldPos, fade);
     #endif 
   #endif
 
   v_color0 = color;
   gl_Position = mul(u_viewProj, vec4(worldPos, 1.0));
+#else
+  v_color0 = vec4(0.0,0.0,0.0,0.0);
+  gl_Position = vec4(0.0,0.0,0.0,0.0);
+#endif
 }
