@@ -2,10 +2,11 @@ $input a_color0, a_position, a_texcoord0, a_texcoord1
 #ifdef INSTANCING
   $input i_data0, i_data1, i_data2, i_data3
 #endif
-$output v_color0, v_color1, v_fog, v_refl, v_texcoord0, v_lightmapUV, v_extra
+$output v_color0, v_color1, v_fog, v_refl, v_EndRefl, v_texcoord0, v_lightmapUV, v_extra, v_cPos, v_wPos, v_viewDir, v_horizonCol, v_zenithCol, v_rainTime
 
 #include <bgfx_shader.sh>
 #include <newb/main.sh>
+#include <MinecraftRenderer.Materials/TAAUtil.dragonh>
 
 uniform vec4 RenderChunkFogAlpha;
 uniform vec4 FogAndDistanceControl;
@@ -71,20 +72,28 @@ void main() {
   vec3 zenithCol;
   vec3 horizonCol;
   vec3 horizonEdgeCol;
+  vec3 endHorizonCol;
   if (underWater) {
     vec3 fogcol = getUnderwaterCol(FogColor.rgb);
     zenithCol = fogcol;
     horizonCol = fogcol;
     horizonEdgeCol = fogcol;
+    endHorizonCol = fogcol;
   } else if (end) {
     zenithCol = getEndZenithCol();
     horizonCol = getEndHorizonCol();
     horizonEdgeCol = horizonCol;
+    endHorizonCol = getEndHorizonCol();
   } else {
-    vec3 fs = getSkyFactors(FogColor.rgb);
-    zenithCol = getZenithCol(rainFactor, FogColor.rgb, fs);
-    horizonCol = getHorizonCol(rainFactor, FogColor.rgb, fs);
+  
+    //vec3 fs = getSkyFactors(FogColor.rgb);
+    //zenithCol = getZenithCol(rainFactor, FogColor.rgb, fs);
+    //horizonCol = getHorizonCol(rainFactor, FogColor.rgb, fs);
+  
+    zenithCol = getZenithCol(rainFactor, FogColor.rgb);
+    horizonCol = getHorizonCol(rainFactor, FogColor.rgb);
     horizonEdgeCol = getHorizonEdgeCol(horizonCol, rainFactor, FogColor.rgb);
+    endHorizonCol = getEndHorizonCol();
   }
 
   // time
@@ -104,12 +113,13 @@ void main() {
 #endif
 
   vec3 torchColor; // modified by nl_lighting
-  vec3 light = nlLighting(
-    worldPos, torchColor, a_color0.rgb, FogColor.rgb, rainFactor,uv1, lit, isTree, horizonCol, zenithCol, shade, end, nether, underWater, t
-  );
+  vec3 light = nlLighting(worldPos, torchColor, a_color0.rgb, FogColor.rgb, rainFactor,uv1, lit, isTree,
+                           horizonCol, zenithCol, shade, end, nether, underWater, t);
 
 #if defined(ALPHA_TEST) && (defined(NL_PLANTS_WAVE) || defined(NL_LANTERN_WAVE))
-  nlWave(worldPos, light, rainFactor, uv1, lit, a_texcoord0, bPos, a_color0, cPos, tiledCpos, t, isColored, camDis, isTree);
+  nlWave(worldPos, light, rainFactor, uv1, lit,
+          a_texcoord0*vec2(2.0, 0.5), bPos, a_color0, cPos, tiledCpos, t,
+          isColored, camDis, isTree, FogColor.rgb);
 #endif
 
 #ifdef NL_CHUNK_LOAD_ANIM
@@ -121,19 +131,20 @@ void main() {
   relativeDist += RenderChunkFogAlpha.x;
 
   vec4 fogColor;
-  fogColor.rgb = nlRenderSky(horizonEdgeCol, horizonCol, zenithCol, viewDir, FogColor.rgb, t, rainFactor, end, underWater, nether);
-  fogColor.a = nlRenderFogFade(relativeDist, FogColor.rgb, FogAndDistanceControl.xy);
+  fogColor.rgb = nlRenderSky(horizonEdgeCol, horizonCol, zenithCol, viewDir, t, rainFactor, end, underWater, nether, FogColor.rgb, 1.0);
+  fogColor.a = nlRenderFogFade(relativeDist, FogColor.rgb, FogAndDistanceControl.xy, uv1, end);
   #ifdef NL_GODRAY 
-    fogColor.a = mix(fogColor.a, 1.0, NL_GODRAY*nlRenderGodRayIntensity(cPos, worldPos, t, uv1, relativeDist, FogColor.rgb));
+    fogColor.a = mix(fogColor.a, 1.0, NL_GODRAY*nlRenderGodRayIntensity(cPos, worldPos, t, uv1, relativeDist, FogColor.rgb, fogColor.a));
   #endif
 
   if (nether) {
-    // blend fog with void color
+  // blend fog with void color
     fogColor.rgb = colorCorrectionInv(FogColor.rgb);
     fogColor.rgb = mix(fogColor.rgb, vec3(0.8,0.2,0.12)*1.5, lit.x*(1.67-fogColor.a*1.67));
   }
 
   vec4 refl = vec4(0.0,0.0,0.0,0.0);
+  vec4 endrefl = vec4(0.0,0.0,0.0,0.0);
   vec4 pos;
 
 #if !defined(DEPTH_ONLY_OPAQUE) || defined(DEPTH_ONLY)
@@ -146,14 +157,17 @@ void main() {
   if (a_color0.b > 0.3 && a_color0.a < 0.95) {
     water = 1.0;
     refl = nlWater(
-      worldPos, color, a_color0, viewDir, light, cPos, tiledCpos, bPos.y, FogColor.rgb, horizonCol, horizonEdgeCol, zenithCol, lit, t, camDis, rainFactor, torchColor, end, nether, underWater
+      worldPos, color, a_color0, viewDir, light, cPos, tiledCpos, bPos.y, FogColor.rgb, horizonCol, horizonEdgeCol, zenithCol, lit, uv1, t, camDis, rainFactor, torchColor, end, nether, underWater
     );
+
     pos = mul(u_viewProj, vec4(worldPos, 1.0));
   } else {
     water = 0.0;
     pos = mul(u_viewProj, vec4(worldPos, 1.0));
     refl = nlRefl(
       color, fogColor, lit, uv1, tiledCpos, camDis, worldPos, viewDir, torchColor, horizonEdgeCol, horizonCol, zenithCol, FogColor.rgb, rainFactor, FogAndDistanceControl.z, t, pos.xyz, underWater, end, nether
+    );
+    endrefl = nlcEndRefl1(lit, uv1, camDis, worldPos, viewDir, torchColor, horizonEdgeCol, horizonCol, zenithCol, FogColor.rgb, rainFactor, FogAndDistanceControl.z, t, underWater, end, nether
     );
   }
 #else
@@ -162,10 +176,12 @@ void main() {
   refl = nlRefl(
     color, fogColor, lit, uv1, tiledCpos, camDis, worldPos, viewDir, torchColor, horizonEdgeCol, horizonCol, zenithCol, FogColor.rgb, rainFactor, FogAndDistanceControl.z, t, pos.xyz, underWater, end, nether
   );
+  endrefl = nlcEndRefl1(lit, uv1, camDis, worldPos, viewDir, torchColor, horizonEdgeCol, horizonCol, zenithCol, FogColor.rgb, rainFactor, FogAndDistanceControl.z, t, underWater, end, nether
+  );
 #endif
 
   if (underWater) {
-    nlUnderwaterLighting(light, pos.xyz, lit, uv1, tiledCpos, cPos, t, horizonEdgeCol);
+    nlUnderwaterLighting(light, pos.xyz, lit, uv1, tiledCpos, cPos, t, horizonCol);
   }
 #else
   float water = 0.0;
@@ -182,10 +198,19 @@ void main() {
 
   v_extra = vec4(shade, worldPos.y, water, shimmer);
   v_refl = refl;
+  v_EndRefl = endrefl;
   v_texcoord0 = a_texcoord0;
   v_lightmapUV = a_texcoord1;
   v_color0 = color;
   v_color1 = a_color0;
   v_fog = fogColor;
+  
+  v_cPos = cPos; //
+  v_wPos = worldPos; //
+  v_viewDir = viewDir; //
+  v_horizonCol = horizonCol; //
+  v_zenithCol = zenithCol; //
+  v_rainTime = vec2(rainFactor, t); //
+
   gl_Position = pos;
 }

@@ -12,7 +12,16 @@ vec4 v_color0     : COLOR0;
 vec4 v_color1     : COLOR1;
 vec4 v_fog        : COLOR2;
 vec4 v_refl       : COLOR3;
+vec4 v_EndRefl    : COLOR4;
+
 centroid vec2 v_texcoord0  : TEXCOORD0;
-vec2 v_lightmapUV : TEXCOORD1;
-vec3 v_position   : TEXCOORD2;
-vec4 v_extra      : TEXCOORD3;
+vec2 v_lightmapUV          : TEXCOORD1;
+vec3 v_position            : TEXCOORD2;
+vec4 v_extra               : TEXCOORD3;
+
+vec3 v_wPos         : COLOR5;
+vec3 v_viewDir      : COLOR6;
+vec3 v_horizonCol   : COLOR7;
+vec3 v_zenithCol    : COLOR8;
+vec2 v_rainTime     : COLOR9;
+vec3 v_cPos         : COLOR10;
