@@ -72,7 +72,7 @@ void drawMeteors(inout vec3 col, vec2 uv, float time, float mask){
 
     vec2 dir = normalize(vec2(-1.0, -0.5));
     vec2 mv  = -dir*cos(mod(time*1.2,NLC_CONST_PI))*90.0;
-    vec2 sp  = vec2(10.0+100.0*hash1(vec2_splat(floor(time*1.2/NLC_CONST_PI))),10.0);
+    vec2 sp  = vec2(10.0+100.0*hash1(vec2(floor(time*1.2/NLC_CONST_PI))),10.0);
     vec2 ep  = sp+dir*5.0;
 
     drawMeteor(col, uv, sp+mv, ep+mv, 0.0005, mask, sp, ep);
@@ -103,7 +103,7 @@ vec3 nlcEndSpiral(vec3 pos, float t, vec3 horizonCol)
   shape = sin((nPos.x + pow(nPos.y, 0.2)*10.0) * 6.0) + shape - nPos.y*2.;
   vec3 col = horizonCol*max(0.0,shape)*0.7;
   
-  return HorizonMask(vec3(0.0), col, pos);
+  return HorizonMask(vec3(0.0, 0.0, 0.0), col, pos);
 }
 
 #include "lighting.h"

@@ -134,7 +134,7 @@ vec3 getSunBloom(vec3 viewDir, vec3 FOG_COLOR, float lit) {
   float sunBloom = spread;
   sunBloom = 0.5*spread + sunBloom*sunBloom*sunBloom*1.5;
 
-  vec3 g = mix(mix(vec3(0.0), vec3(1.5,0.5,0.05), sunBloom), vec3(1.0,0.4,0.05)*2.0+0.2, smoothstep(0.9, 2.0, sunBloom));
+  vec3 g = mix(mix(vec3(0.0, 0.0, 0.0), vec3(1.5,0.5,0.05), sunBloom), vec3(1.0,0.4,0.05)*2.0+0.2, smoothstep(0.9, 2.0, sunBloom));
 
   return (g*factor*factor);
 //  return vec3(0.7,0.414,0.231)*(sunBloom*factor*factor);
